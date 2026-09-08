@@ -60,13 +60,13 @@ management:
 
 logging:
   level:
-    com.cdms: DEBUG
-    org.flywaydb: INFO
+    com.cdms: INFO
     org.hibernate.SQL: WARN
+    org.springframework.web: INFO
 
 springdoc:
   api-docs:
-    path: /api-docs
+    path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
     enabled: true

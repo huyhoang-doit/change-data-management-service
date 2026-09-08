@@ -1,5 +1,7 @@
 package com.cdms.dto.response;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 /**
  * Response body cho Webhook endpoint: {@code POST /api/v1/webhooks/inventory}.
  *
@@ -13,8 +15,12 @@ package com.cdms.dto.response;
  * <p>Cả DUPLICATE và OLD_DATA đều trả HTTP 200 — đây là idempotent behavior đúng chuẩn.
  * Client không cần retry, không cần lo về side effects.
  */
+@Schema(description = "Response kết quả xử lý Webhook event")
 public record WebhookResponse(
+        @Schema(description = "Event ID", example = "EVT-20260908-001")
         String eventId,
+
+        @Schema(description = "Trạng thái xử lý: PROCESSED | DUPLICATE | OLD_DATA | FAILED", example = "PROCESSED")
         String status
 ) {
 

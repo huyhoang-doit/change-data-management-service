@@ -6,6 +6,14 @@ import com.cdms.service.ChangeProcessingService;
 import com.cdms.service.ExcelParserService;
 import com.cdms.service.ExcelParserService.ParseResult;
 import com.cdms.service.model.ChangeData;
+import com.cdms.dto.response.ApiErrorResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -49,6 +57,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/imports")
 @RequiredArgsConstructor
+@Tag(name = "Excel Import API", description = "Endpoint import batch danh sách sản phẩm từ file Excel (.xlsx)")
 public class ExcelImportController {
 
     private final ExcelParserService excelParserService;
@@ -60,8 +69,25 @@ public class ExcelImportController {
      * @param file multipart file .xlsx
      * @return summary kết quả xử lý từng row
      */
+    @Operation(
+            summary = "Upload và import file Excel sản phẩm",
+            description = "Nhận file Excel (.xlsx), parse từng dòng và xử lý batch. Hỗ trợ Partial Failure (dòng lỗi không làm hỏng dòng khác)."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Import hoàn tất, trả về thống kê số lượng thành công / trùng / lỗi",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ExcelImportResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "File không đúng định dạng hoặc bị trống",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ApiErrorResponse.class))
+            )
+    })
     @PostMapping(value = "/products", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ExcelImportResponse> importProducts(
+            @Parameter(description = "File Excel (.xlsx) chứa dữ liệu sản phẩm", required = true)
             @RequestParam("file") MultipartFile file) {
 
         log.info("Excel import started: file={}, size={}KB",

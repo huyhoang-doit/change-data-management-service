@@ -1,6 +1,9 @@
 package com.cdms.emulator;
 
 import com.cdms.emulator.dto.VietfulProduct;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -31,6 +34,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/vietful/products")
 @RequiredArgsConstructor
+@Tag(name = "Vietful Emulator API", description = "Mock API giả lập Vietful Inventory External Service")
 public class VietfulEmulatorController {
 
     private final VietfulEmulatorService emulatorService;
@@ -40,6 +44,7 @@ public class VietfulEmulatorController {
      * Trả danh sách tất cả sản phẩm. Mỗi lần gọi có thể có 2–3 sản phẩm
      * được tự động update (simulate real Vietful).
      */
+    @Operation(summary = "Lấy danh sách tất cả sản phẩm Vietful (mô phỏng)")
     @GetMapping
     public ResponseEntity<List<VietfulProduct>> getAllProducts() {
         List<VietfulProduct> products = emulatorService.getAllProducts();
@@ -51,8 +56,10 @@ public class VietfulEmulatorController {
      * GET /vietful/products/{id}
      * Trả sản phẩm theo ID. 404 nếu không tìm thấy.
      */
+    @Operation(summary = "Lấy chi tiết sản phẩm Vietful theo ID")
     @GetMapping("/{id}")
-    public ResponseEntity<VietfulProduct> getProductById(@PathVariable String id) {
+    public ResponseEntity<VietfulProduct> getProductById(
+            @Parameter(description = "Vietful Product ID", required = true) @PathVariable String id) {
         return emulatorService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -63,6 +70,7 @@ public class VietfulEmulatorController {
      * Tạo sản phẩm mới. ID được sinh tự động nếu không cung cấp.
      * Trả HTTP 201 Created với body là sản phẩm vừa tạo (bao gồm ID được gán).
      */
+    @Operation(summary = "Tạo sản phẩm Vietful mới")
     @PostMapping
     public ResponseEntity<VietfulProduct> createProduct(@RequestBody VietfulProduct product) {
         VietfulProduct created = emulatorService.create(product);
@@ -75,9 +83,10 @@ public class VietfulEmulatorController {
      * Update sản phẩm. Version tự động tăng.
      * 404 nếu ID không tồn tại.
      */
+    @Operation(summary = "Cập nhật sản phẩm Vietful (tăng version)")
     @PutMapping("/{id}")
     public ResponseEntity<VietfulProduct> updateProduct(
-            @PathVariable String id,
+            @Parameter(description = "Vietful Product ID", required = true) @PathVariable String id,
             @RequestBody VietfulProduct product) {
 
         return emulatorService.update(id, product)

@@ -5,9 +5,17 @@ import com.cdms.dto.response.ProcessingResult;
 import com.cdms.dto.response.WebhookResponse;
 import com.cdms.service.ChangeProcessingService;
 import com.cdms.service.model.ChangeData;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import com.cdms.dto.response.ApiErrorResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,6 +42,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/webhooks")
 @RequiredArgsConstructor
+@Tag(name = "Webhook API", description = "Endpoint tiếp nhận real-time inventory change event từ CDC Callback Client")
 public class WebhookController {
 
     private final ChangeProcessingService changeProcessingService;
@@ -47,6 +56,27 @@ public class WebhookController {
      * @param request validated request body
      * @return processing result với HTTP 200 cho mọi kết quả hợp lệ
      */
+    @Operation(
+            summary = "Nhận inventory change event real-time",
+            description = "Xử lý event từ CDC. Trả về 200 OK với status PROCESSED, DUPLICATE hoặc OLD_DATA. Đảm bảo tính idempotent."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Xử lý thành công (hoặc trùng lặp / dữ liệu cũ)",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = WebhookResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Dữ liệu request không hợp lệ",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ApiErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "503",
+                    description = "Hệ thống tạm thời không khả dụng (DB down)",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ApiErrorResponse.class))
+            )
+    })
     @PostMapping("/inventory")
     public ResponseEntity<WebhookResponse> handleInventoryChange(
             @Valid @RequestBody InventoryChangeRequest request) {
