@@ -1,1 +1,61 @@
-# 
+services:
+
+  # ── PostgreSQL ─────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: cdms-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-cdms}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      # pg_isready kiểm tra PostgreSQL đã sẵn sàng nhận kết nối chưa
+      # cdms service sẽ KHÔNG start nếu postgres chưa healthy
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-cdms}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # ── CDMS Application ────────────────────────────────────────────────────────
+  cdms:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cdms-app
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    environment:
+      # Database connection — trỏ đến service "postgres" (Docker internal DNS)
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-cdms}
+      DATABASE_USERNAME: ${POSTGRES_USER:-postgres}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      # Polling config
+      CDMS_POLLING_INTERVAL_MS: ${CDMS_POLLING_INTERVAL_MS:-60000}
+      CDMS_POLLING_ENABLED: ${CDMS_POLLING_ENABLED:-true}
+      # Vietful emulator — gọi chính service này (self-referencing emulator)
+      VIETFUL_BASE_URL: http://cdms:8080/vietful
+      # JVM timezone
+      TZ: Asia/Ho_Chi_Minh
+    depends_on:
+      postgres:
+        # QUAN TRỌNG: chờ postgres healthy trước khi start cdms
+        # Không có điều này, cdms có thể start trước khi DB sẵn sàng
+        # → Flyway migration fail → application crash
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  postgres_data:
+    name: cdms_postgres_data
