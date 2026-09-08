@@ -51,6 +51,12 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     boolean existsByExternalIdAndSku(String externalId, String sku);
 
     /**
+     * Count products by external ID and SKU — dùng trong Concurrency Test
+     * để assert DB chỉ có đúng 1 product record sau 100 concurrent requests.
+     */
+    long countByExternalIdAndSku(String externalId, String sku);
+
+    /**
      * Update product version atomically.
      * Used when bumping version after a successful change is applied.
      */
