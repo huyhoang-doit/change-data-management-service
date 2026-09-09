@@ -1,5 +1,8 @@
 package com.cdms.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -42,5 +45,27 @@ public class RestClientConfig {
                 .defaultHeader("Content-Type", "application/json")
                 .defaultHeader("Accept", "application/json")
                 .build();
+    }
+
+    /**
+     * ObjectMapper bean — cần khai báo tường minh trong Spring Boot 4.
+     *
+     * <p>Spring Boot 3.x tự động tạo bean này thông qua JacksonAutoConfiguration.
+     * Spring Boot 4.x khi dùng {@code spring-boot-starter-webmvc} không còn
+     * auto-configure ObjectMapper nữa, nên phải khai báo thủ công.
+     *
+     * <p>Cấu hình:
+     * <ul>
+     *   <li>{@link JavaTimeModule}: hỗ trợ serialize/deserialize {@code LocalDateTime},
+     *       {@code LocalDate}, v.v.</li>
+     *   <li>{@code WRITE_DATES_AS_TIMESTAMPS = false}: dùng ISO-8601 string
+     *       thay vì Unix timestamp cho readability</li>
+     * </ul>
+     */
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper()
+                .registerModule(new JavaTimeModule())
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
 }
