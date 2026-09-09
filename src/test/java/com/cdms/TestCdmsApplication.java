@@ -1,4 +1,4 @@
-package com.example.cdms;
+package com.cdms;
 
 import org.springframework.boot.SpringApplication;
 

@@ -1,0 +1,20 @@
+# ============================================================
+# Test configuration — override application.yaml khi chạy test
+# ============================================================
+
+# Tắt Scheduler — không muốn Scheduler chạy nền trong test
+# Scheduler sẽ gọi VietfulClient → gọi /vietful/products → gây side effect
+cdms:
+  polling:
+    enabled: false
+
+# Tắt Vietful polling interval để tránh log noise
+scheduling:
+  enabled: false
+
+# Log level — giảm noise trong test output
+logging:
+  level:
+    com.cdms: INFO
+    org.flywaydb: WARN
+    org.hibernate.SQL: WARN
